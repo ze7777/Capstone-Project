@@ -10,7 +10,7 @@
 
 3. pycrypto - a RSA encryption/decryption module in PyPI
 
-The program will automatically check the required modules. If some modules are missing, the program will prompt user to install it. 
+The program will automatically check the required modules when it begins to execute. If some modules are missing, the program will prompt user to install it. 
 
 
 
