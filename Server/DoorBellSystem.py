@@ -110,7 +110,7 @@ class doorbell():
     
     #Enable the SSH service
     def EnableSSH(self):
-        print("->Enable SSH service");
+        print("->Enable SSH service & TTL="+str(self.SSH_TTL)+"s");
         os.system(self.SSH_TurnOn)
         #print(self.SSH_TurnOn)
         
