@@ -110,6 +110,7 @@ class doorbell():
     
     #Enable the SSH service
     def EnableSSH(self):
+        print("->Enable SSH service");
         os.system(self.SSH_TurnOn)
         #print(self.SSH_TurnOn)
         
@@ -118,6 +119,7 @@ class doorbell():
 
     #Close the SSH service
     def CloseSSH(self):
+        print("->Close SSH service");
         os.system(self.SSH_TurnOff);
         #print(self.SSH_TurnOff)
         
@@ -217,12 +219,11 @@ class doorbell():
                         self.Database.pop(addr);
                         return;    
                
-                #Check the equality of two HashValues, if correct, enable the SSH service
+                #Check the equality of two HashValues, if correct, enable SSH service
                 if(Message3==HashValue):
                     print("->The Message3(HashValue) is received from",addr[0],"at Port:",self.PortList[-1]);
                     
-                    #Enable the SSH service
-                    print("->Enable the SSH service");
+                    #Enable SSH service
                     self.EnableSSH();
                     
                     #Enable a Timer, after TTL, close the SSH service
