@@ -22,7 +22,7 @@ The program will automatically check the required modules when it begins to exec
     
    **Example: python3 ServerStart.py apple 10000,20000,30000,40000**
 
-2. The server's public key which is used for RSA encryption is saved in the "Server/Keys/PublicKey.pem"
+2. The server's public key which is used for RSA encryption by clients is saved in the "Server/Keys/PublicKey.pem"
 
 3. Distribute the PublicKey.pem to the client and the client should put the key in the "Client/Keys/PublicKey.pem"
 
