@@ -33,7 +33,7 @@ except ImportError:
         try:
             import pip
         except ImportError:
-            print("\n->No pip module, preparing to install pip");
+            print("\n->No pip module, preparing to install pip\n");
             t=threading.Thread(target=os.system,args=("sudo apt-get install python3-pip",));
             t.start();
             t.join();
