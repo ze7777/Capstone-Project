@@ -20,7 +20,7 @@ The program will automatically check the required modules when it begins to exec
 
    **python3 ServerStart.py secret port1,port2,port3…**
     
-   **Example: python3 ServerStart.py apple 10000,20000,30000,40000**
+   **Example: sudo python3 ServerStart.py apple 10000,20000,30000**
 
 2. The server's public key which is used for RSA encryption by clients is saved in the "Server/Keys/PublicKey.pem"
 
@@ -30,4 +30,4 @@ The program will automatically check the required modules when it begins to exec
     
    **python3 ClientStart.py serverIP secret port1,port2,port3…**
    
-   **Example: python3 ClientStart.py 192.168.1.1 apple 10000,20000,30000,40000**
+   **Example: sudo python3 ClientStart.py 192.168.1.1 apple 10000,20000,30000**
