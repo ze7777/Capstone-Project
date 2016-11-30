@@ -12,7 +12,7 @@ import threading
 OS=platform.system();
 
 if(OS!="Linux"):
-    print("->Please run this program on Linux or Mac!");
+    print("->Please run this program on Linux!");
     sys.exit();
         
 if(os.getuid()!=0):
