@@ -1,7 +1,7 @@
 
 import sys
 import signal
-import DoorBellSystem
+import Doorbell
 
 
 def sigint_handler(signum, frame):
