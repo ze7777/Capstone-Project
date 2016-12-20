@@ -30,7 +30,7 @@ def main():
     
         
     MyDoorbell=Doorbell.doorbell(secret,PortList);
-    MyDoorbell.Start();
+    MyDoorbell.SystemStart();
     
     return;
 
