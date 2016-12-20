@@ -29,8 +29,8 @@ def main():
         return;
     
         
-    MyDoorBell=DoorBellSystem.doorbell(secret,PortList);
-    MyDoorBell.SystemStart();
+    MyDoorbell=Doorbell.doorbell(secret,PortList);
+    MyDoorbell.Start();
     
     return;
 
