@@ -67,12 +67,12 @@ class doorbell():
         
 
         print("->Closing SSH Service...");
-        self.CloseSSH();
+        self.DisableSSH();
         
 
         print("->Generating 1024-bit RSA key...");
         self.ServerRSAKey=RSA.generate(1024);
-        self.saveServerPublicKey();
+        self.SaveServerPublicKey();
         
 
         #Database Entry: addr->[ClientKey,Event,ArrivedPacks]
@@ -95,10 +95,45 @@ class doorbell():
         return;
     
 
+    #Read a plain text, encrypt the text by RSA key and return encrypted bytes
+    def Encription(self, PlainText, PublicKey):
+        
+        if(type(PlainText)!=bytes):
+            PlainText=PlainText.encode();
+            
+        cipher = PKCS1_OAEP.new(PublicKey);
+        CipherText = cipher.encrypt(PlainText);
+    
+        return CipherText;
 
 
-    #Save the ServerPublicKey in the local disk=../Server/Keys/PublicKey.pem
-    def saveServerPublicKey(self):
+    #Read encrypted bytes, decrypt the cipher by RSA key and return a plain text
+    def decryption(self, CipherText):
+        
+        cipher = PKCS1_OAEP.new(self.ServerRSAKey);
+        PlainText=cipher.decrypt(CipherText).decode();
+        
+        return PlainText;
+
+
+    #Enable SSH service
+    def EnableSSH(self):
+        print("->Enable SSH service & TTL="+str(self.SSH_TTL)+"s");
+        os.system(self.SSH_TurnOn)
+        
+        return;
+
+
+    #Disable SSH service
+    def DisableSSH(self):
+        print("->Close SSH service");
+        os.system(self.SSH_TurnOff);
+        
+        return;
+    
+    
+    #Save the server public key to local disk=/Server/Keys/PublicKey.pem
+    def SaveServerPublicKey(self):
         
         f=open(os.getcwd()+"/Keys/PublicKey.pem","wb");
         ServerPublicKey=self.ServerRSAKey.publickey().exportKey();
@@ -107,48 +142,9 @@ class doorbell():
         
         return;
     
-    
-    #Enable the SSH service
-    def EnableSSH(self):
-        print("->Enable SSH service & TTL="+str(self.SSH_TTL)+"s");
-        os.system(self.SSH_TurnOn)
-        #print(self.SSH_TurnOn)
-        
-        return;
-
-
-    #Close the SSH service
-    def CloseSSH(self):
-        print("->Close SSH service");
-        os.system(self.SSH_TurnOff);
-        #print(self.SSH_TurnOff)
-        
-        return;
-    
-    
-    #Read a plain text(string or byte string), return encrypted bytes
-    def encription(self, plainText, PublicKey):
-        
-        if(type(plainText)!=bytes):
-            plainText=plainText.encode();
-            
-        cipher = PKCS1_OAEP.new(PublicKey);
-        cipherText = cipher.encrypt(plainText);
-    
-        return cipherText;
-    
-    
-    #Read encrypted bytes, return a plain text(string)
-    def decryption(self, cipherText):
-        
-        cipher = PKCS1_OAEP.new(self.ServerRSAKey);
-        plainText=cipher.decrypt(cipherText).decode();
-        
-        return plainText;
-    
 
     #Add the packet info to the database, such as arriving port & time
-    def addEntry(self,addr,Port):
+    def AddEntry(self,addr,Port):
         
         if(self.Database.get(addr)==None):
             ClientKey=None;
@@ -165,7 +161,7 @@ class doorbell():
     
     
     #Check the arriving order of Message1s, if out-of-order, return false
-    def checkArriveOrder(self,addr):
+    def CheckArrivingOrder(self,addr):
         
         ArrivedPacks=self.Database[addr][2];
         for i in range(len(self.PortList)-2):
@@ -179,27 +175,31 @@ class doorbell():
         return True;
     
     
-    #Verification process, initiated by receiving the Message1 at port A
-    def verification(self,addr):
+    '''
+    The verification function initiated by receiving a Message#1 at port A. 
+    In this function, the system uses a one-time hash to verify the identification 
+    of the client once more. If client is identified, the doorbell system will enable SSH service.
+    '''
+    def Verification(self,addr):
         
         #The EVENT will block the function until the server receives the required number of Message1s
         EVENT=self.Database[addr][1];
         
         RecvAllPacks=EVENT.wait(self.VerificationTTL); #This is a Timer
         if(RecvAllPacks==False):
-            print("ATTENTION: The verification process for",addr[0],"is timeout!\n");
+            print("ATTENTION: The Verification process for",addr[0],"is timeout!\n");
             self.Database.pop(addr);
             return;
         
         else:
-            #Check the arriving order of Message1s, if out-of-order, exit verification
-            if(self.checkArriveOrder(addr)==True):
+            #Check the arriving order of Message1s, if out-of-order, exit Verification
+            if(self.CheckArrivingOrder(addr)==True):
                 
                 #Send the Message2(HashValue) to the client at PortList[-2]
                 seed=str(random.random()).encode();
                 HashValue=SHA256.new(seed).hexdigest();
                 ClientKey=self.Database[addr][0];
-                Message2=self.encription(HashValue,ClientKey);
+                Message2=self.Encription(HashValue,ClientKey);
                 print("->Sending the Message2(HashValue) to the client:",addr[0]);
                 self.SocketList[-2].sendto(Message2,addr);
                 
@@ -227,11 +227,11 @@ class doorbell():
                     self.EnableSSH();
                     
                     #Enable a Timer, after TTL, close the SSH service
-                    threading.Timer(self.SSH_TTL, self.CloseSSH).start();
+                    threading.Timer(self.SSH_TTL, self.DisableSSH).start();
                     
                     #Send the SSH_Port and TTL to the client
                     text=str(self.SSH_Port)+"@@@"+str(self.SSH_TTL);
-                    Message4=self.encription(text,ClientKey);
+                    Message4=self.Encription(text,ClientKey);
                     print("->Sending the Message4(SSH_Port) to the client:",addr[0],"\n");
                     self.SocketList[-1].sendto(Message4,addr);
                     
@@ -249,7 +249,7 @@ class doorbell():
 
         return;
     
-    
+    #The Monitoring function contains a UDP listening port which is used to receive Message#1s sent from client.
     def Monitering(self,sock):
         
         IncomingPort=sock.getsockname()[1];
@@ -269,12 +269,12 @@ class doorbell():
     
             if(secret==self.Secret):
                 print("->The secret is received from",addr[0],"at Port:",IncomingPort);
-                self.addEntry(addr,IncomingPort);
+                self.AddEntry(addr,IncomingPort);
                 
                 if(IncomingPort==self.PortList[0]):
                     '''
                     If at Port A, save the client key,
-                    and initiate verification process in a new thread.
+                    and initiate Verification process in a new thread.
                     '''
                     ClientKey=RSA.importKey(key);
                     EVENT=threading.Event();
@@ -282,14 +282,14 @@ class doorbell():
                     self.Database[addr][0]=ClientKey;
                     self.Database[addr][1]=EVENT;
                     
-                    print("->Starting the verification process for",addr[0]);
-                    threading.Thread(target=self.verification,args=(addr,)).start();
+                    print("->Starting the Verification process for",addr[0]);
+                    threading.Thread(target=self.Verification,args=(addr,)).start();
                 
                 else:
                     '''
                     If the packet arrives at other ports, the server checks the
                     number of arrived packets. If the NumOfArrived equals the required
-                    number, it will release the EVENT in the verification();
+                    number, it will release the EVENT in the Verification();
                     '''
                     ArrivedPacks=self.Database[addr][2];
                     Required=len(self.PortList)-1;

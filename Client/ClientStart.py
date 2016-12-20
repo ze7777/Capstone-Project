@@ -38,33 +38,33 @@ except ImportError:
         sys.exit();
 
 
-#Read a string or byte string, return encrypted bytes
-def encription(plainText, PublicKey):
+#Read a plain text, encrypt the text by RSA key and return encrypted bytes
+def Encription(PlainText, PublicKey):
         
-    if(type(plainText)==str):
-        plainText=plainText.encode();
+    if(type(PlainText)==str):
+        PlainText=PlainText.encode();
             
     cipher = PKCS1_OAEP.new(PublicKey);
-    cipherText = cipher.encrypt(plainText);
+    CipherText = cipher.encrypt(PlainText);
     
-    return cipherText;
+    return CipherText;
     
     
-#Read encrypted bytes, return a string
-def decryption(cipherText, ClientRSAKey):
+#Read encrypted bytes, decrypt the cipher by RSA key and return a plain text
+def Decryption(CipherText, ClientRSAKey):
     
     cipher = PKCS1_OAEP.new(ClientRSAKey);
-    plainText=cipher.decrypt(cipherText).decode();
+    PlainText=cipher.decrypt(CipherText).decode();
     
-    return plainText;
+    return PlainText;
 
 
-def getPublicKey(RSAKey):
+def GetPublicKey(RSAKey):
     
     return RSAKey.publickey().exportKey();
 
 
-def getLocalIP():
+def GetLocalIP():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM);
     s.connect(("gmail.com",80));
     ip=s.getsockname()[0];
@@ -95,7 +95,7 @@ def main():
         return;
     
     
-    LocalIP=getLocalIP();
+    LocalIP=GetLocalIP();
     
     try:
         sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM);
@@ -122,8 +122,8 @@ def main():
     '''
     Message1 Format: Secret@@@ClientPublicKey
     '''
-    ClientPublicKey=getPublicKey(ClientRSAKey);
-    Message1=encription(Secret,ServerPublicKey)+b"@@@"+ClientPublicKey;
+    ClientPublicKey=GetPublicKey(ClientRSAKey);
+    Message1=Encription(Secret,ServerPublicKey)+b"@@@"+ClientPublicKey;
     
     
     #Send the Message1s to the server
@@ -136,18 +136,18 @@ def main():
     #Receive the HashValue from the server
     (data,addr)=sock.recvfrom(65535);
     print("->The Message2(HashValue) is received from the server");
-    HashValue=decryption(data,ClientRSAKey);
+    HashValue=Decryption(data,ClientRSAKey);
     
     
     #Send the Message3(HashValue) to the server
-    Message3=encription(HashValue,ServerPublicKey);
+    Message3=Encription(HashValue,ServerPublicKey);
     print("->Sending the Message3(HashValue) to the server port",PortList[-1]);
     sock.sendto(Message3,(ServerIP,PortList[-1]));
     
     
     #Receive the SSH_Port and TTL from the server
     (data,addr)=sock.recvfrom(65535);
-    data=decryption(data,ClientRSAKey);
+    data=Decryption(data,ClientRSAKey);
     data=data.split("@@@");
     print("SSH port: "+data[0]+", open for "+data[1]+" s.");
     
